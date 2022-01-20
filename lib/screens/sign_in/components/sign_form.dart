@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:formz/formz.dart';
 import 'package:material_app/components/custom_surfix_icon.dart';
 import 'package:material_app/components/form_error.dart';
 import 'package:material_app/helper/keyboard.dart';
+import 'package:material_app/logic/loginCubit/login_cubit.dart';
 import 'package:material_app/screens/forgot_password/forgot_password_screen.dart';
 import 'package:material_app/screens/login_success/login_success_screen.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../components/default_button.dart';
 import '../../../constants.dart';
 import '../../../size_config.dart';
 
 class SignForm extends StatefulWidget {
+  const SignForm({Key? key}) : super(key: key);
+
   @override
   _SignFormState createState() => _SignFormState();
 }
@@ -20,20 +25,6 @@ class _SignFormState extends State<SignForm> {
   String? password;
   bool? remember = false;
   final List<String?> errors = [];
-
-  void addError({String? error}) {
-    if (!errors.contains(error))
-      setState(() {
-        errors.add(error);
-      });
-  }
-
-  void removeError({String? error}) {
-    if (errors.contains(error))
-      setState(() {
-        errors.remove(error);
-      });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,12 +47,12 @@ class _SignFormState extends State<SignForm> {
                   });
                 },
               ),
-              Text("Remember me"),
-              Spacer(),
+              const Text("Remember me"),
+              const Spacer(),
               GestureDetector(
                 onTap: () => Navigator.pushNamed(
                     context, ForgotPasswordScreen.routeName),
-                child: Text(
+                child: const Text(
                   "Forgot Password",
                   style: TextStyle(decoration: TextDecoration.underline),
                 ),
@@ -70,15 +61,15 @@ class _SignFormState extends State<SignForm> {
           ),
           FormError(errors: errors),
           SizedBox(height: getProportionateScreenHeight(20)),
-          DefaultButton(
-            text: "Continue",
-            press: () {
-              if (_formKey.currentState!.validate()) {
-                _formKey.currentState!.save();
-                // if all are valid then go to success screen
-                KeyboardUtil.hideKeyboard(context);
-                Navigator.pushNamed(context, LoginSuccessScreen.routeName);
-              }
+          BlocBuilder<LoginCubit, LoginState>(
+            buildWhen: (previous, current) => previous.status != current.status,
+            builder: (context, state) {
+              return DefaultButton(
+                text: "Continue",
+                press: state.status.isValidated
+                    ? () => context.read<LoginCubit>().onSubmitted()
+                    : null,
+              );
             },
           ),
         ],
@@ -86,69 +77,50 @@ class _SignFormState extends State<SignForm> {
     );
   }
 
-  TextFormField buildPasswordFormField() {
-    return TextFormField(
-      obscureText: true,
-      onSaved: (newValue) => password = newValue,
-      onChanged: (value) {
-        if (value.isNotEmpty) {
-          removeError(error: kPassNullError);
-        } else if (value.length >= 8) {
-          removeError(error: kShortPassError);
-        }
-        return null;
+  BlocBuilder<LoginCubit, LoginState> buildPasswordFormField() {
+    return BlocBuilder<LoginCubit, LoginState>(
+      buildWhen: (previous, current) => previous.password != current.password,
+      builder: (context, state) {
+        return TextFormField(
+          obscureText: true,
+          onSaved: (newValue) => password = newValue,
+          onChanged: (password) =>
+              context.read<LoginCubit>().onPasswordChanged(password),
+          decoration: InputDecoration(
+            labelText: "Password",
+            hintText: "Enter your password",
+            // If  you are using latest version of flutter then lable text and hint text shown like this
+            // if you r using flutter less then 1.20.* then maybe this is not working properly
+            floatingLabelBehavior: FloatingLabelBehavior.always,
+            suffixIcon: const CustomSurffixIcon(svgIcon: "assets/icons/Lock.svg"),
+            errorText: state.password.invalid ? 'invalid password' : null,
+          ),
+        );
       },
-      validator: (value) {
-        if (value!.isEmpty) {
-          addError(error: kPassNullError);
-          return "";
-        } else if (value.length < 8) {
-          addError(error: kShortPassError);
-          return "";
-        }
-        return null;
-      },
-      decoration: InputDecoration(
-        labelText: "Password",
-        hintText: "Enter your password",
-        // If  you are using latest version of flutter then lable text and hint text shown like this
-        // if you r using flutter less then 1.20.* then maybe this is not working properly
-        floatingLabelBehavior: FloatingLabelBehavior.always,
-        suffixIcon: CustomSurffixIcon(svgIcon: "assets/icons/Lock.svg"),
-      ),
     );
   }
 
-  TextFormField buildEmailFormField() {
-    return TextFormField(
-      keyboardType: TextInputType.emailAddress,
-      onSaved: (newValue) => email = newValue,
-      onChanged: (value) {
-        if (value.isNotEmpty) {
-          removeError(error: kEmailNullError);
-        } else if (emailValidatorRegExp.hasMatch(value)) {
-          removeError(error: kInvalidEmailError);
-        }
-        return null;
+  BlocBuilder<LoginCubit, LoginState> buildEmailFormField() {
+    return BlocBuilder<LoginCubit, LoginState>(
+      buildWhen: (previous, current) => previous.email != current.email,
+      builder: (context, state) {
+        return TextFormField(
+          keyboardType: TextInputType.emailAddress,
+          onSaved: (newValue) => email = newValue,
+          onChanged: (email) =>
+              context.read<LoginCubit>().onEmailChanged(email),
+              
+          decoration: InputDecoration(
+            labelText: "Email",
+            hintText: "Enter your email",
+            errorText: state.email.invalid ? 'invalid email' : null,
+            // If  you are using latest version of flutter then lable text and hint text shown like this
+            // if you r using flutter less then 1.20.* then maybe this is not working properly
+            floatingLabelBehavior: FloatingLabelBehavior.always,
+            suffixIcon: CustomSurffixIcon(svgIcon: "assets/icons/Mail.svg"),
+          ),
+        );
       },
-      validator: (value) {
-        if (value!.isEmpty) {
-          addError(error: kEmailNullError);
-          return "";
-        } else if (!emailValidatorRegExp.hasMatch(value)) {
-          addError(error: kInvalidEmailError);
-          return "";
-        }
-        return null;
-      },
-      decoration: InputDecoration(
-        labelText: "Email",
-        hintText: "Enter your email",
-        // If  you are using latest version of flutter then lable text and hint text shown like this
-        // if you r using flutter less then 1.20.* then maybe this is not working properly
-        floatingLabelBehavior: FloatingLabelBehavior.always,
-        suffixIcon: CustomSurffixIcon(svgIcon: "assets/icons/Mail.svg"),
-      ),
     );
   }
 }
