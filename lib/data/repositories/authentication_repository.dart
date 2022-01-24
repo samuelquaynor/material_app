@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:material_app/models/models.dart';
 import 'package:material_app/models/wrappers/auth_data.dart';
@@ -100,7 +99,6 @@ class AuthenticationRepository {
   Future<void> deleteToken() async {
     await storage.delete(key: 'token');
 
-    void dispose() => _controller.close();
   }
 
   void dispose() => _controller.close();

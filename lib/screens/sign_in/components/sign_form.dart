@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:formz/formz.dart';
 import 'package:material_app/components/custom_surfix_icon.dart';
 import 'package:material_app/components/form_error.dart';
-import 'package:material_app/helper/keyboard.dart';
 import 'package:material_app/logic/loginCubit/login_cubit.dart';
 import 'package:material_app/screens/forgot_password/forgot_password_screen.dart';
-import 'package:material_app/screens/login_success/login_success_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../components/default_button.dart';
@@ -117,7 +115,7 @@ class _SignFormState extends State<SignForm> {
             // If  you are using latest version of flutter then lable text and hint text shown like this
             // if you r using flutter less then 1.20.* then maybe this is not working properly
             floatingLabelBehavior: FloatingLabelBehavior.always,
-            suffixIcon: CustomSurffixIcon(svgIcon: "assets/icons/Mail.svg"),
+            suffixIcon: const CustomSurffixIcon(svgIcon: "assets/icons/Mail.svg"),
           ),
         );
       },
